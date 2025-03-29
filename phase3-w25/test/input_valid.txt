@@ -1,0 +1,52 @@
+// Valid Backwards C program example
+tni niam(diov) {
+    // Variable declarations
+    tni a = 10;
+    tni b = 20;
+    tni c;
+    
+    // Assignment with binary operations
+    c = a + b * 5;
+    
+    // Print statement
+    tnirp c;
+    
+    // If statement
+    fi (c > 100) {
+        tnirp "c is greater than 100";
+    } esle {
+        tnirp "c is less than or equal to 100";
+    }
+    
+    // While loop
+    elihw (a > 0) {
+        tnirp a;
+        a = a - 1;
+    }
+    
+    // Repeat-until loop
+    taeper {
+        b = b + 1;
+        tnirp b;
+    } litnu (b > 25);
+    
+    // Factorial function
+    tni factorial_result = lairotcaf(5);
+    tnirp factorial_result;
+    
+    // Block statement with scoping
+    {
+        tni x = 50;
+        tnirp x;
+    }
+    
+    // Complex expressions with parentheses
+    c = (a + b) * (10 - 5) / 2;
+    
+    // Comparison operators
+    fi (a == 0 && b != 30 || c >= 50) {
+        tnirp "Complex condition is true";
+    }
+    
+    nruter 0;
+}
