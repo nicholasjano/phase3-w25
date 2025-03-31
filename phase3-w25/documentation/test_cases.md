@@ -139,12 +139,64 @@ tni niam(diov) {
 tni rehtona_noitcnuf(diov);
 ```
 
-## 2. Expected outputs
+### 1.3 Semantic Error Input
+
+```c
+// Semantic error test cases
+tni niam(diov) {
+    // Undeclared variable
+    a = 5;
+
+    // Valid declaration
+    tni b = 10;
+    
+    // Uninitialized variable use
+    tni c;
+    tnirp c;
+    
+    // Redeclaration in same scope
+    tni b;
+    
+    // Valid variable usage after initialization
+    c = b + 10;
+    tnirp c;
+    
+    // Scope testing
+    {
+        // Valid variable shadowing
+        tni b = 20;
+        tnirp b;  // Should print 20
+        
+        // New variable in nested scope
+        tni d = 30;
+        tnirp d;
+    }
+    
+    // Variable out of scope
+    tnirp d;
+    
+    // Valid factorial usage
+    tni fact = lairotcaf(5);
+    tnirp fact;
+    
+    // Invalid factorial (should ideally be a float)
+    tni invalid_fact = lairotcaf(b * 0.5);
+    
+    // Valid if with complex condition
+    fi (c > 0 && b <= 100) {
+        tnirp "Valid condition";
+    }
+    
+    nruter 0;
+}
+```
+
+## 2. Expected Output
 
 ### 2.1 Valid Input
 
 ```
-==============================
+==============================       
 PARSING FILE: ../test/input_valid.txt
 ==============================
 Input:
@@ -468,6 +520,121 @@ Program
                                   Number: 0
 
 Parsing completed successfully with no errors.
+==============================
+```
+
+```
+==============================
+SEMANTIC ANALYSIS OF FILE: ../test/input_valid.txt
+==============================
+Input:
+// Valid Backwards C program example
+tni niam(diov) {
+    // Variable declarations
+    tni a = 10;
+    tni b = 20;
+    tni c;
+
+    // Assignment with binary operations
+    c = a + b * 5;
+
+    // Print statement
+    tnirp c;
+
+    // If statement
+    fi (c > 100) {
+        tnirp "c is greater than 100";
+    } esle {
+        tnirp "c is less than or equal to 100";
+    }
+
+    // While loop
+    elihw (a > 0) {
+        tnirp a;
+        a = a - 1;
+    }
+
+    // Repeat-until loop
+    taeper {
+        b = b + 1;
+        tnirp b;
+    } litnu (b > 25);
+
+    // Factorial function
+    tni factorial_result = lairotcaf(5);
+    tnirp factorial_result;
+
+    // Block statement with scoping
+    {
+        tni x = 50;
+        tnirp x;
+    }
+
+    // Complex expressions with parentheses
+    c = (a + b) * (10 - 5) / 2;
+
+    // Comparison operators
+    fi (a == 0 && b != 30 || c >= 50) {
+        tnirp "Complex condition is true";
+    }
+
+    nruter 0;
+}
+
+
+
+PERFORMING SEMANTIC ANALYSIS...
+
+== SYMBOL TABLE DUMP ==
+Total symbols: 6
+
+Symbol[0]:
+  Name: x
+  Type: int
+  Scope Level: 3
+  Line Declared: 39
+  Initialized: Yes
+
+Symbol[1]:
+  Name: factorial_result
+  Type: int
+  Scope Level: 2
+  Line Declared: 34
+  Initialized: Yes
+
+Symbol[2]:
+  Name: c
+  Type: int
+  Scope Level: 2
+  Line Declared: 6
+  Initialized: Yes
+
+Symbol[3]:
+  Name: b
+  Type: int
+  Scope Level: 2
+  Line Declared: 5
+  Initialized: Yes
+
+Symbol[4]:
+  Name: a
+  Type: int
+  Scope Level: 2
+  Line Declared: 4
+  Initialized: Yes
+
+Symbol[5]:
+  Name: niam
+  Type: int
+  Scope Level: 0
+  Line Declared: 2
+  Initialized: Yes
+
+===================
+
+Semantic analysis successful. Found 0 error(s).
+
+Semantic analysis completed successfully. No errors found.
 ==============================
 ```
 
@@ -860,5 +1027,131 @@ Program
                                             Function Declaration: rehtona_noitcnuf
 
 Parsing completed with 26 errors.
+==============================
+```
+
+### 2.3 Semantic Error Input
+
+```
+==============================
+SEMANTIC ANALYSIS OF FILE: ../test/input_semantic_error.txt
+==============================
+Input:
+// Semantic error test cases
+tni niam(diov) {
+    // Undeclared variable
+    a = 5;
+
+    // Valid declaration
+    tni b = 10;
+
+    // Uninitialized variable use
+    tni c;
+    tnirp c;
+
+    // Redeclaration in same scope
+    tni b;
+
+    // Valid variable usage after initialization
+    c = b + 10;
+    tnirp c;
+
+    // Scope testing
+    {
+        // Valid variable shadowing
+        tni b = 20;
+        tnirp b;  // Should print 20
+
+        // New variable in nested scope
+        tni d = 30;
+        tnirp d;
+    }
+
+    // Variable out of scope
+    tnirp d;
+
+    // Valid factorial usage
+    tni fact = lairotcaf(5);
+    tnirp fact;
+
+    // Invalid factorial (should ideally be a float)
+    tni invalid_fact = lairotcaf(b * 0.5);
+
+    // Valid if with complex condition
+    fi (c > 0 && b <= 100) {
+        tnirp "Valid condition";
+    }
+
+    nruter 0;
+}
+
+Parse Error at line 39, column 16: Invalid expression after '0.5'
+Parse Error at line 42, column 5: Missing parenthesis in expression
+Parse Error at line 42, column 7: Missing semicolon after 'c'
+Parse Error at line 42, column 15: Expected '=' after 'b'
+
+PERFORMING SEMANTIC ANALYSIS...
+Semantic Error at line 4: Undeclared variable 'a'
+Semantic Error at line 11: Variable 'c' may be used uninitialized
+Semantic Error at line 14: Variable 'b' already declared in this scope
+Semantic Error at line 32: Undeclared variable 'd'
+
+== SYMBOL TABLE DUMP ==
+Total symbols: 7
+
+Symbol[0]:
+  Name: invalid_fact
+  Type: int
+  Scope Level: 2
+  Line Declared: 39
+  Initialized: Yes
+
+Symbol[1]:
+  Name: fact
+  Type: int
+  Scope Level: 2
+  Line Declared: 35
+  Initialized: Yes
+
+Symbol[2]:
+  Name: d
+  Type: int
+  Scope Level: 3
+  Line Declared: 27
+  Initialized: Yes
+
+Symbol[3]:
+  Name: b
+  Type: int
+  Scope Level: 3
+  Line Declared: 23
+  Initialized: Yes
+
+Symbol[4]:
+  Name: c
+  Type: int
+  Scope Level: 2
+  Line Declared: 10
+  Initialized: Yes
+
+Symbol[5]:
+  Name: b
+  Type: int
+  Scope Level: 2
+  Line Declared: 7
+  Initialized: Yes
+
+Symbol[6]:
+  Name: niam
+  Type: int
+  Scope Level: 0
+  Line Declared: 2
+  Initialized: Yes
+
+===================
+
+Semantic analysis failed. Found 4 error(s).
+
+Semantic analysis failed. Errors detected.
 ==============================
 ```

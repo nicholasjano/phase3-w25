@@ -241,7 +241,43 @@ AST_BINOP (token = operator)
 └── right: Right operand
 ```
 
-## 5. Complete Program Example
+## 5. Semantic Rules
+
+### 5.1 Variable Declaration and Usage
+
+1. Variables must be declared before use
+2. Variables cannot be redeclared in the same scope
+3. Variables declared in inner scopes can shadow outer variables
+4. Variables are only accessible within their scope
+
+### 5.2 Type Rules
+
+1. Variables have a type (int, char, float, void)
+2. Type compatibility in expressions follows these rules:
+   - Same types are always compatible
+   - Numeric types (int, float) are compatible with each other
+   - Other type combinations are incompatible
+
+### 5.3 Initialization Rules
+
+1. Variables start as uninitialized when declared without assignment
+2. Variables are marked as initialized after assignment
+3. Function parameters are considered initialized
+4. Using uninitialized variables is reported as a warning
+
+### 5.4 Scope Rules
+
+1. Global scope is level 0
+2. Function bodies start at scope level 1
+3. Each block introduces a new scope level
+4. When looking up variables, search from the current scope outward
+
+### 5.5 Special Operation Rules
+
+1. Factorial function (lairotcaf) requires an integer argument
+2. Division requires a non-zero divisor (checked for constants)
+
+## 6. Complete Program Example
 
 ```c
 // Valid Backwards C program example
@@ -298,7 +334,7 @@ tni niam(diov) {
 }
 ```
 
-## 6. Operator Precedence Table
+## 7. Operator Precedence Table
 
 | Precedence | Operators            | Associativity | Grammar Rule              |
 |------------|----------------------|---------------|---------------------------|
@@ -309,9 +345,29 @@ tni niam(diov) {
 | 5          | &&                   | Left to right | LogicalAndExpression      |
 | 6 (lowest) | \|\|                 | Left to right | LogicalOrExpression       |
 
-## 7. Special Features
+## 8. Symbol Table Structure
 
-### 7.1 Factorial Function
+The semantic analyzer maintains a symbol table to track variables:
+
+```c
+typedef struct Symbol {
+    char name[100];          // Variable name
+    int type;                // Data type (TOKEN_INT, etc.)
+    int scope_level;         // Scope nesting level
+    int line_declared;       // Line where declared
+    int is_initialized;      // Has been assigned a value?
+    struct Symbol* next;     // For linked list implementation
+} Symbol;
+
+typedef struct {
+    Symbol* head;            // First symbol in the table
+    int current_scope;       // Current scope level
+} SymbolTable;
+```
+
+## 9. Special Features
+
+### 9.1 Factorial Function
 
 The factorial function is a built-in special case that is handled differently from regular function calls:
 
@@ -319,7 +375,7 @@ The factorial function is a built-in special case that is handled differently fr
 tni x = lairotcaf(5);  // Computes 5!
 ```
 
-### 7.2 Block Scoping
+### 9.2 Block Scoping
 
 Variables declared within a block are local to that block:
 
@@ -331,7 +387,7 @@ Variables declared within a block are local to that block:
 // local_var not accessible here
 ```
 
-### 7.3 Repeat-Until Loop
+### 9.3 Repeat-Until Loop
 
 The repeat-until loop executes the body at least once, then checks the condition:
 
@@ -339,4 +395,17 @@ The repeat-until loop executes the body at least once, then checks the condition
 taeper {
     // Loop body (executed at least once)
 } litnu (condition);  // Loop until condition is true
+```
+
+### 9.4 Variable Shadowing
+
+Inner scopes can declare variables that shadow outer variables with the same name:
+
+```c
+tni x = 10;
+{
+    tni x = 20;  // New variable that shadows outer x
+    tnirp x;     // Prints 20
+}
+tnirp x;         // Prints 10
 ```

@@ -1,143 +1,208 @@
-# Compiler Parser Phase
+# Compiler Semantic Analyzer Phase
 
-## Parser Overview
+## Semantic Analyzer Overview
 
-This parser is the second phase for the "Backwards C" compiler. It takes the token stream from the lexical analyzer (Phase 1, but also updated here) and transforms it into an Abstract Syntax Tree (AST) representation of the program. Our parser uses a recursive descent approach with precedence climbing for expressions, allowing it to correctly handle operator precedence and nested constructs.
+This semantic analyzer is the third phase for the "Backwards C" compiler. It takes the Abstract Syntax Tree (AST) from the parser (Phase 2) and performs contextual checks to ensure the program is not only syntactically correct but also semantically valid according to the language rules. The semantic analyzer uses a symbol table to track variables, their types, and scopes.
 
-Key components of the parser implementation include:
-- Token consumption and matching functions
-- AST node creation and management
-- Expression parsing with proper precedence handling
-- Statement and declaration parsing
+Key components of the semantic analyzer implementation include:
+- Symbol table creation and management
+- Variable declaration and usage validation
+- Scope management and variable visibility rules
+- Type checking and compatibility verification
+- Initialization tracking to prevent use of uninitialized variables
 - Error detection, reporting, and recovery mechanisms
 
 ## Features
 
-- **Expression Parsing**
-  - Full arithmetic operator support (+, -, *, /)
-  - Comparison operators (<, >, ==, !=, <=, >=)
-  - Logical operators (&&, ||)
-  - Proper operator precedence handling
-  - Parenthesized expressions for grouping
+- **Symbol Table Management**
+  - Linked-list implementation of symbol records
+  - Scope level tracking for nested blocks
+  - Variable initialization status tracking
+  - Line number information for detailed error reporting
+  - Support for looking up symbols across scopes
 
-- **Statement Types**
-  - Variable declarations with optional initialization
-  - Assignment statements
-  - Conditional statements (if-else)
-  - Iteration constructs (while loops, repeat-until loops)
-  - Block statements with proper scoping
-  - Function declarations with parameter handling
-  - Print statements
-  - Return statements
+- **Variable Checking**
+  - Declaration before use verification
+  - Detection of redeclarations in the same scope
+  - Tracking of variable initialization status
+  - Warning for potentially uninitialized variable usage
+  - Proper handling of variable shadowing
 
-- **Special Language Features**
-  - Factorial function support as a built-in operation
+- **Type System**
+  - Support for basic types (int, float, char, void)
+  - Type compatibility checking in expressions
+  - Implicit type conversion where appropriate
+  - Validation of operand types for operators
+  - Special handling for arithmetic operations
+
+- **Scope Analysis**
   - Block-level variable scoping
-  - Support for various data types (int, float, char, void)
+  - Proper nested scope handling
+  - Access control for variables based on scope
+  - Validation of variable references across scopes
+  - Support for function parameter scoping
 
 - **Error Handling**
-  - Detailed error messages with line and column information
-  - Synchronization-based error recovery to continue parsing after errors
-  - Prevention of cascading errors
-  - Support for common error patterns in user code
+  - Detailed error messages with line information
+  - Specific error types for different semantic issues
+  - Continuation of analysis after errors when possible
   - Error count tracking and summary reporting
+  - Prevention of cascading errors
 
-- **AST Generation and Visualization**
-  - Creation of a comprehensive Abstract Syntax Tree
-  - Tree visualization for debugging
-  - Memory management for AST nodes
-  - Support for complex nested structures
+- **Special Feature Validation**
+  - Factorial function argument type checking
+  - Control statement condition validation
+  - Block statement scope management
+  - Function declaration and parameter handling
 
-## Language Syntax Supported
+## Semantic Rules Enforced
 
-### Basic Program Structure
+### Variable Declaration and Usage
 ```c
-// Main function declaration
-tni niam(diov) {
-    // Statements go here
-    nruter 0;
+// Variables must be declared before use
+x = 10;                 // Error: x not declared
+
+// Variables cannot be redeclared in the same scope
+tni a = 5;
+tni a = 10;             // Error: a already declared
+
+// Variables are initialized with declaration+assignment or assignment
+tni x = 10;             // x is initialized
+tni y;                  // y is not initialized
+y = 5;                  // y is now initialized
+
+// Using uninitialized variables generates a warning
+tni z;
+tnirp z;                // Warning: z may be used uninitialized
+```
+
+### Scope Rules
+```c
+// Variables are only accessible in their scope or inner scopes
+{
+    tni a = 10;
+    {
+        tni b = 20;
+        // a and b are accessible here
+    }
+    // Only a is accessible here
 }
-```
+// Neither a nor b are accessible here
 
-### Variable Declarations and Assignments
-```c
-// Variable declarations
-tni a;                  // Simple declaration
-tni b = 10;             // Declaration with initialization
-rahc c = 'x';           // Character variable
-taolf d = 3.14;         // Floating point variable
-
-// Assignments
-a = 5;                  // Simple assignment
-b = a + 10;             // Assignment with expression
-```
-
-### Expressions
-```c
-// Arithmetic operations
-a = b + c;              // Addition
-x = y - z;              // Subtraction
-p = q * r;              // Multiplication
-m = n / o;              // Division
-
-// Comparison operations
-fi (a > b) { }          // Greater than
-fi (x <= y) { }         // Less than or equal
-fi (p == q) { }         // Equality
-fi (m != n) { }         // Inequality
-
-// Logical operations
-fi (a > b && x < y) { } // Logical AND
-fi (p == q || m != n) { } // Logical OR
-
-// Parenthesized expressions
-result = (a + b) * (c - d);
-```
-
-### Control Structures
-```c
-// If-Else statement
-fi (condition) {
-    // Then branch
-} esle {
-    // Else branch
+// Inner scopes can shadow outer variables
+tni x = 10;
+{
+    tni x = 20;         // New variable that shadows outer x
+    tnirp x;            // Prints 20
 }
-
-// While loop
-elihw (condition) {
-    // Loop body
-}
-
-// Repeat-Until loop
-taeper {
-    // Loop body - executes at least once
-} litnu (condition);
+tnirp x;                // Prints 10
 ```
 
-### Functions
+### Type Checking
 ```c
-// Function declaration
+// Operands must have compatible types
+tni a = 5;
+taolf b = 3.14;
+a + b;                  // Valid: numeric types are compatible
+
+// Comparison operations produce boolean results (represented as int)
+fi (a > b) { }          // Valid: comparison produces boolean
+
+// Special operations have type requirements
+tni fact = lairotcaf(5);     // Valid: factorial requires integer
+tni invalid = lairotcaf(3.5); // Error: factorial requires integer
+```
+
+### Function Handling
+```c
+// Functions must be declared before use
 tni add(tni a, tni b) {
     nruter a + b;
 }
+tni result = add(5, 10); // Valid: add is declared
 
-// Function call
-tni result = add(5, 10);
-```
-
-### Special Features
-```c
-// Factorial function
-tni fact = lairotcaf(5);  // Computes 5!
-
-// Block scoping
-{
-    tni local_var = 42;  // Only accessible within this block
-    tnirp local_var;
+// Function parameters create new scope
+tni mul(tni x, tni y) {
+    nruter x * y;       // x and y are in function scope
 }
-// local_var not accessible here
-
-// Print statement
-tnirp "Hello, world!";
-tnirp x + y;
 ```
+
+### Control Flow
+```c
+// Conditions in control statements are validated
+fi (condition) {        // condition is checked for validity
+    // Then branch
+}
+
+// Block statements create new scopes
+elihw (x > 0) {
+    tni y = x;          // y is only accessible in the loop
+    x = x - 1;
+}
+// y is not accessible here
+```
+
+## Error Types and Messages
+
+The semantic analyzer produces specific error messages for different types of semantic errors:
+
+```
+Semantic Error at line 4: Undeclared variable 'a'
+Semantic Error at line 11: Variable 'c' may be used uninitialized
+Semantic Error at line 14: Variable 'b' already declared in this scope
+Semantic Error at line 32: Undeclared variable 'd'
+Semantic Error at line 39: Type mismatch involving 'factorial'
+```
+
+## Symbol Table Structure
+
+The symbol table is implemented as a linked list of symbol records:
+
+```c
+typedef struct Symbol {
+    char name[100];          // Variable name
+    int type;                // Data type (int, etc.)
+    int scope_level;         // Scope nesting level
+    int line_declared;       // Line where declared
+    int is_initialized;      // Has been assigned a value?
+    struct Symbol* next;     // For linked list implementation
+} Symbol;
+
+typedef struct {
+    Symbol* head;            // First symbol in the table
+    int current_scope;       // Current scope level
+} SymbolTable;
+```
+
+The semantic analyzer uses the following operations on the symbol table:
+
+- `init_symbol_table()`: Create a new symbol table
+- `add_symbol()`: Add a new symbol to the current scope
+- `lookup_symbol()`: Find a symbol across all accessible scopes
+- `lookup_symbol_current_scope()`: Find a symbol in the current scope only
+- `enter_scope()`: Increase the scope level when entering a block
+- `exit_scope()`: Decrease the scope level when exiting a block
+- `free_symbol_table()`: Release memory allocated for the symbol table
+
+## Scoping Mechanism
+
+Scopes are represented by integer levels:
+- Global scope: level 0
+- Function body: level 1
+- Nested blocks: level 2, 3, etc.
+
+When looking up a variable, the semantic analyzer searches from the current scope outward:
+1. First look in the current scope
+2. If not found, look in outer scopes
+3. If found in multiple scopes, use the one from the innermost scope
+
+Variable shadowing is handled by having multiple entries with the same name but different scope levels.
+
+## Future Enhancements
+
+Future enhancements could include:
+- Enhanced function signature validation
+- User-defined types and structures
+- More sophisticated type inference and conversion
+- Constant expression evaluation
+- Warning for potential null pointer or division by zero

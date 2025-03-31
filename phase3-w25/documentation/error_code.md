@@ -1,4 +1,4 @@
-# Backwards C Parser Error Codes and Error Handling
+# Backwards C Error Codes and Error Handling
 
 ## 1. Parse Error Type Enumeration
 
@@ -113,11 +113,80 @@ tni x = ;     // Missing expression after '='
 x = a + ;     // Incomplete expression
 ```
 
-## 2. Parser Synchronization Strategy
+## 2. Semantic Error Type Enumeration
+
+### SEM_ERROR_NONE (0)
+
+- Normal semantic state
+- No error condition present
+
+### SEM_ERROR_UNDECLARED_VARIABLE (1)
+
+- Using a variable that hasn't been declared
+- Examples:
+
+```c
+a = 5;        // Error: 'a' not declared
+tnirp b;      // Error: 'b' not declared
+```
+
+### SEM_ERROR_REDECLARED_VARIABLE (2)
+
+- Declaring a variable that already exists in the same scope
+- Examples:
+
+```c
+tni a = 10;
+tni a = 20;   // Error: 'a' already declared in this scope
+```
+
+### SEM_ERROR_TYPE_MISMATCH (3)
+
+- Incompatible types in operations or assignments
+- Examples:
+
+```c
+tni a = "hello";  // Error: assigning string to int
+lairotcaf(1.5);   // Error: factorial requires int argument
+```
+
+### SEM_ERROR_UNINITIALIZED_VARIABLE (4)
+
+- Using a variable before it has been assigned a value
+- Examples:
+
+```c
+tni x;
+tnirp x;      // Error: 'x' may be used uninitialized
+```
+
+### SEM_ERROR_INVALID_OPERATION (5)
+
+- Operation not valid for the given operands
+- Examples:
+
+```c
+x = 5 / 0;    // Error: division by zero
+```
+
+### SEM_ERROR_SEMANTIC_ERROR (6)
+
+- Generic semantic error for other cases
+- Examples:
+
+```c
+// Out of scope access
+{
+    tni x = 10;
+}
+tnirp x;      // Error: 'x' not accessible here
+```
+
+## 3. Parser Synchronization Strategy
 
 The parser uses synchronization to recover from errors and continue parsing:
 
-### 2.1 Synchronization Points
+### 3.1 Synchronization Points
 
 - Semicolons (statement boundaries)
 - Opening/closing braces (block boundaries)
@@ -152,117 +221,122 @@ static void synchronize(void) {
 }
 ```
 
-### 2.2 Dummy Node Creation
+## 4. Semantic Error Handling Strategy
 
-When an error is encountered, the parser creates dummy nodes to maintain AST structure:
+The semantic analyzer detects and reports errors without attempting complex recovery:
 
-```c
-if (match(TOKEN_RPAREN)) {
-    parse_error(PARSE_ERROR_MISSING_CONDITION, if_token);
-    // Create a dummy condition
-    node->left = create_node(AST_NUMBER);
-    node->left->token.lexeme[0] = '0';
-    node->left->token.lexeme[1] = '\0';
-    advance(); // Consume ')'
-}
-```
-
-## 3. Implementation Details
-
-### 3.1 Error Reporting Structure
+### 4.1 Error Reporting
 
 ```c
-void parse_error(ParseError error, Token token) {
-    // Only report errors if reporting is enabled
-    if (!error_reporting_enabled) {
-        return;
-    }
+void semantic_error(SemanticErrorType error, const char* name, int line) {
+    semantic_error_count++;
+    printf("Semantic Error at line %d: ", line);
     
-    // Skip duplicate errors at the same location
-    if (token.line == last_reported_line && token.column == last_reported_column) {
-        return;
-    }
-    
-    // Update the last reported error location
-    last_reported_line = token.line;
-    last_reported_column = token.column;
-    error_count++;
-    
-    printf("Parse Error at line %d, column %d: ", token.line, token.column);
     switch (error) {
-        case PARSE_ERROR_UNEXPECTED_TOKEN:
-            printf("Unexpected token '%s'\n", token.lexeme);
+        case SEM_ERROR_UNDECLARED_VARIABLE:
+            printf("Undeclared variable '%s'\n", name);
             break;
-        // ... other cases
+        case SEM_ERROR_REDECLARED_VARIABLE:
+            printf("Variable '%s' already declared in this scope\n", name);
+            break;
+        case SEM_ERROR_TYPE_MISMATCH:
+            printf("Type mismatch involving '%s'\n", name);
+            break;
+        case SEM_ERROR_UNINITIALIZED_VARIABLE:
+            printf("Variable '%s' may be used uninitialized\n", name);
+            break;
+        case SEM_ERROR_INVALID_OPERATION:
+            printf("Invalid operation involving '%s'\n", name);
+            break;
+        default:
+            printf("Unknown semantic error with '%s'\n", name);
     }
 }
 ```
 
-### 3.2 Error Tracking Variables
+### 4.2 Semantic Error Recovery
+
+Unlike syntax error recovery, semantic error recovery is simpler:
+- Report the error
+- Continue analyzing when possible
+- Track total error count
+- Return overall success/failure at the end
+
+This approach allows detecting multiple semantic errors in a single pass.
+
+## 5. Symbol Table Management
+
+The semantic analyzer maintains a symbol table to track variables:
 
 ```c
-static int error_reporting_enabled = 1;
-static int last_reported_line = 0;
-static int last_reported_column = 0;
-static int error_count = 0;
+// Symbol structure for symbol table
+typedef struct Symbol {
+    char name[100];          // Variable name
+    int type;                // Data type (using TokenType for types)
+    int scope_level;         // Scope nesting level
+    int line_declared;       // Line where declared
+    int is_initialized;      // Has been assigned a value?
+    struct Symbol* next;     // For linked list implementation
+} Symbol;
+
+// Symbol table structure
+typedef struct {
+    Symbol* head;            // First symbol in the table
+    int current_scope;       // Current scope level
+} SymbolTable;
 ```
 
-### 3.3 Error Recovery Process
+### 5.1 Scope Management
 
-1. Error Detection
+- Enter scope: Increase scope level when entering a block
+- Exit scope: Decrease scope level when exiting a block
+- Variable lookup: Search from current scope outward to global
+- Symbol table tracks all symbols with their scope levels
+
+### 5.2 Initialization Tracking
+
+- Each symbol tracks whether it's been initialized
+- Warnings for using uninitialized variables
+- Assignment statements mark variables as initialized
+
+## 6. Common Error Patterns and Examples
+
+### 6.1 Undeclared Variable
 
 ```c
-if (!match(TOKEN_RPAREN)) {
-    parse_error(PARSE_ERROR_MISSING_PARENTHESES, if_token);
+// Using variable before declaration
+a = 5;       // Error: Undeclared variable 'a'
+```
+
+### 6.2 Uninitialized Variable
+
+```c
+// Using variable before assigning value
+tni x;
+tnirp x;     // Error: Variable 'x' may be used uninitialized
+```
+
+### 6.3 Redeclaration in Same Scope
+
+```c
+// Declaring same variable twice
+tni a = 10;
+tni a = 20;  // Error: Variable 'a' already declared in this scope
+```
+
+### 6.4 Out of Scope Access
+
+```c
+// Using variable outside its scope
+{
+    tni x = 10;
 }
+tnirp x;     // Error: Undeclared variable 'x'
 ```
 
-2. Error Reporting
+### 6.5 Type Mismatch
 
 ```c
-parse_error(PARSE_ERROR_MISSING_SEMICOLON, current_token);
-```
-
-3. Recovery Action
-
-```c
-synchronize(); // Skip to next valid parsing point
-```
-
-## 4. Error Prevention Strategies
-
-### 4.1 Prevention of Cascading Errors
-
-```c
-// Skip duplicate errors at the same location
-if (token.line == last_reported_line && token.column == last_reported_column) {
-    return;
-}
-```
-
-### 4.2 Robust Expression Parsing
-
-```c
-// Check for empty or invalid expressions
-if (match(TOKEN_SEMICOLON) || match(TOKEN_RPAREN)) {
-    parse_error(PARSE_ERROR_INVALID_EXPRESSION, current_token);
-    // Create a dummy node for recovery
-    ASTNode *dummy = create_node(AST_NUMBER);
-    dummy->token.lexeme[0] = '0';  
-    dummy->token.lexeme[1] = '\0';
-    return dummy;
-}
-```
-
-### 4.3 Nullable Parameter Handling
-
-```c
-// Handle empty parentheses, create a dummy expression
-if (match(TOKEN_RPAREN)) {
-    node = create_node(AST_NUMBER);
-    node->token.lexeme[0] = '0';
-    node->token.lexeme[1] = '\0';
-    advance(); // Consume ')'
-    return node;
-}
+// Incompatible types
+tni x = "string";  // Error: Type mismatch
 ```
