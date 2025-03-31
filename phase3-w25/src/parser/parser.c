@@ -1132,11 +1132,3 @@ void proc_test_file(const char *filename) {
 
     free_ast(ast);
 }
-
-// Main function for testing
-int main() {
-    // Test with both valid and invalid inputs
-    proc_test_file("../test/input_valid.txt");
-    proc_test_file("../test/input_invalid.txt");
-    return 0;
-}

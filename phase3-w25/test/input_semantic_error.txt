@@ -1,0 +1,47 @@
+// Semantic error test cases
+tni niam(diov) {
+    // Undeclared variable
+    a = 5;
+
+    // Valid declaration
+    tni b = 10;
+    
+    // Uninitialized variable use
+    tni c;
+    tnirp c;
+    
+    // Redeclaration in same scope
+    tni b;
+    
+    // Valid variable usage after initialization
+    c = b + 10;
+    tnirp c;
+    
+    // Scope testing
+    {
+        // Valid variable shadowing
+        tni b = 20;
+        tnirp b;  // Should print 20
+        
+        // New variable in nested scope
+        tni d = 30;
+        tnirp d;
+    }
+    
+    // Variable out of scope
+    tnirp d;
+    
+    // Valid factorial usage
+    tni fact = lairotcaf(5);
+    tnirp fact;
+    
+    // Invalid factorial (should ideally be a float)
+    tni invalid_fact = lairotcaf(b * 0.5);
+    
+    // Valid if with complex condition
+    fi (c > 0 && b <= 100) {
+        tnirp "Valid condition";
+    }
+    
+    nruter 0;
+}
